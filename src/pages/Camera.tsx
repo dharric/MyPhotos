@@ -2,7 +2,8 @@ import React, { useCallback, useEffect } from "react";
 import {
   CameraResultType,
   FilesystemDirectory,
-  Plugins
+  Plugins,
+  Capacitor
 } from "@capacitor/core";
 import { useCamera, availableFeatures } from "@ionic/react-hooks/camera";
 import moment from "moment";
@@ -58,6 +59,8 @@ const Camera: React.FC = () => {
               path: fileName
             }).then(finalPhotoUri => {
               console.log("file uri", finalPhotoUri.uri);
+              const photoUrl = Capacitor.convertFileSrc(finalPhotoUri.uri);
+              console.log("final photo url", photoUrl);
             });
           });
         })
