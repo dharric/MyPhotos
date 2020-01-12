@@ -10,9 +10,8 @@ import {
   IonTabs
 } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
-import { apps, camera, send } from 'ionicons/icons';
+import { photos, camera } from 'ionicons/icons';
 import Tab2 from './pages/Tab2';
-import Tab3 from './pages/Tab3';
 import Details from './pages/Details';
 
 /* Core CSS required for Ionic components to work properly */
@@ -41,9 +40,8 @@ const App: React.FC = () => (
       <IonTabs>
         <IonRouterOutlet>
           <Route path="/camera" component={Camera} exact={true} />
-          <Route path="/tab2" component={Tab2} exact={true} />
-          <Route path="/tab2/details" component={Details} />
-          <Route path="/tab3" component={Tab3} />
+          <Route path="/photos" component={Tab2} exact={true} />
+          <Route path="/photos/details" component={Details} />
           <Route path="/" render={() => <Redirect to="/camera" />} exact={true} />
         </IonRouterOutlet>
         <IonTabBar slot="bottom">
@@ -51,13 +49,9 @@ const App: React.FC = () => (
             <IonIcon icon={camera} />
             <IonLabel>Camera</IonLabel>
           </IonTabButton>
-          <IonTabButton tab="tab2" href="/tab2">
-            <IonIcon icon={apps} />
+          <IonTabButton tab="photos" href="/photos">
+            <IonIcon icon={photos} />
             <IonLabel>Tab Two</IonLabel>
-          </IonTabButton>
-          <IonTabButton tab="tab3" href="/tab3">
-            <IonIcon icon={send} />
-            <IonLabel>Tab Three</IonLabel>
           </IonTabButton>
         </IonTabBar>
       </IonTabs>

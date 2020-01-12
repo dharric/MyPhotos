@@ -86,7 +86,7 @@ const Camera: React.FC = () => {
           console.log(err);
         });
     }
-  }, [photo, Filesystem]);
+  }, [photo, Filesystem, set, get]);
 
   const onClick = () => {
     triggerCamera();
