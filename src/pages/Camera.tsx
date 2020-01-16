@@ -1,11 +1,12 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   CameraResultType,
   FilesystemDirectory,
-  Plugins,
-  Capacitor
+  Capacitor,
+  CameraSource
 } from "@capacitor/core";
 import { useCamera, availableFeatures } from "@ionic/react-hooks/camera";
+import { useFilesystem } from "@ionic/react-hooks/filesystem";
 import { useStorage } from "@ionic/react-hooks/storage";
 import moment from "moment";
 import {
@@ -22,63 +23,63 @@ import {
   IonCardTitle,
   IonItemDivider
 } from "@ionic/react";
+export const LOG_PREFIX = "[Camera] ";
 
 const Camera: React.FC = () => {
-  const { Filesystem } = Plugins;
+  const { readFile, writeFile, getUri } = useFilesystem();
   const { photo, getPhoto } = useCamera();
+  const [lastWebPath, setLastWebPath] = useState("");
+  const [lastPhotoPath, setLastPhotoPath] = useState("");
   const { get, set } = useStorage();
   const triggerCamera = useCallback(async () => {
     if (availableFeatures.getPhoto) {
       await getPhoto({
         quality: 100,
         allowEditing: false,
-        resultType: CameraResultType.Uri
+        resultType: CameraResultType.Uri,
+        source: CameraSource.Camera
       });
     }
   }, [getPhoto]);
 
   useEffect(() => {
-    if (photo) {
-      console.log("photo", photo);
+    if (photo && photo.webPath !== lastWebPath) {
+      setLastWebPath(photo.webPath || "");
+      console.log(LOG_PREFIX + "photo.webPath", photo.webPath);
+      console.log(LOG_PREFIX + "lastWebPath", lastWebPath);
 
-      Filesystem.readFile({
+      readFile({
         path: photo ? photo.path || photo.webPath || "" : ""
       })
         .then(photoInTemp => {
           let date = moment().format("MM-DD-YY-h-mm-ss");
           let fileName = date + ".jpg";
-          console.log("fileName", fileName);
 
           // copy file into local filesystem, as temp will eventually be deleted
-          Filesystem.writeFile({
+          writeFile({
             data: photoInTemp.data,
             path: fileName,
-            directory: FilesystemDirectory.Data
+            directory: FilesystemDirectory.Documents
           }).then(() => {
             // now we try to read the file
-            Filesystem.getUri({
-              directory: FilesystemDirectory.Data,
+            getUri({
+              directory: FilesystemDirectory.Documents,
               path: fileName
             }).then(async finalPhotoUri => {
-              console.log("file uri", finalPhotoUri.uri);
-              const photoUrl = Capacitor.convertFileSrc(finalPhotoUri.uri);
-              console.log("final photo url", photoUrl);
-
-              const existingImageNames = await get("imageNames");
-              let imageNames = existingImageNames || "";
-              imageNames = imageNames + "," + fileName;
-              await set("imageNames", imageNames);
-              console.log("test image name saved", await get("imageNames"));
+              const filePath = finalPhotoUri.uri;
+              const photoUrl = Capacitor.convertFileSrc(filePath);
+              if (photoUrl !== lastPhotoPath) {
+                setLastPhotoPath(photoUrl);
+              }
 
               const imagePaths = await get("imagePaths");
               const imagePathsArray = imagePaths ? JSON.parse(imagePaths) : [];
               imagePathsArray.push({
-                fileName,
-                photoUrl
+                fileName
               });
               const imagePathsArrayString = JSON.stringify(imagePathsArray);
               await set("imagePaths", imagePathsArrayString);
-              console.log("test image paths saved", await get("imagePaths"));
+              console.log(LOG_PREFIX + "imagePaths", await get("imagePaths"));
             });
           });
         })
@@ -86,7 +87,16 @@ const Camera: React.FC = () => {
           console.log(err);
         });
     }
-  }, [photo, Filesystem, get, set]);
+  }, [
+    photo,
+    readFile,
+    writeFile,
+    getUri,
+    get,
+    set,
+    lastPhotoPath,
+    lastWebPath
+  ]);
 
   const onClick = () => {
     triggerCamera();
@@ -108,7 +118,7 @@ const Camera: React.FC = () => {
               </IonCardHeader>
             </IonItemDivider>
             <IonCardContent>
-              {photo && <img src={photo.webPath} alt="my pic" />}
+              {lastPhotoPath && <img src={lastPhotoPath} alt="my pic" />}
               <IonButton style={{ marginTop: ".75em" }} onClick={onClick}>
                 camera
               </IonButton>
